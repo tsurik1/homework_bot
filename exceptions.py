@@ -1,0 +1,2 @@
+class ResponseNotDict(Exception):
+    pass
