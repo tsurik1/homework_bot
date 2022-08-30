@@ -84,7 +84,7 @@ def main():
     updater = Updater(token=TELEGRAM_TOKEN)
 
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = 1
+    current_timestamp = int(time.time())
     updater.start_polling(poll_interval=RETRY_TIME)
     while True:
         try:
