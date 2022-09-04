@@ -112,7 +112,7 @@ def main():
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = 0
     current_status = str()
-    if check_tokens() == False:
+    if check_tokens():
         logger.critical('отановка программы')
         exit()
     while True:
@@ -120,12 +120,11 @@ def main():
             response = get_api_answer(current_timestamp)
             homework = check_response(response)
             message = parse_status(homework)
-            try:
+            if 'current_date' in response:
                 current_timestamp = response['current_date']
-            except TheServerDidNotSendTheTimeCutoff as time_cutoff:
                 raise TheServerDidNotSendTheTimeCutoff(
                     'сервер не отправил отсечку времени'
-                ) from time_cutoff
+                )
             if message != current_status:
                 current_status = message
                 send_message(bot, current_status)
