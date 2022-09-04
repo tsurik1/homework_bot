@@ -77,14 +77,22 @@ def check_response(response: dict) -> dict:
     """Проверяем ответ API на корректность."""
     logger.info("Проверяем ответ ответ API на корректность.")
     if not isinstance(response, dict):
-        raise TypeError(response)
+        raise TypeError(
+            f'{response}ответ API не является словарем'
+        )
     if 'homeworks' not in response:
-        raise KeyError
+        raise KeyError(
+            'ключа homeworks нет в ответе'
+        )
     list_homework: list = response['homeworks']
     if not isinstance(list_homework, list):
-        raise HomeworkIsNotList
+        raise HomeworkIsNotList(
+            'список домашних работ не является списком'
+        )
     if not list_homework:
-        raise ListIsNotEmpty
+        raise ListIsNotEmpty(
+            'список домашних работ пуст'
+        )
     if 'current_date' not in response:
         raise TheServerDidNotSendTheTimeCutoff(
             'сервер не отправил отсечку времени'
@@ -127,7 +135,7 @@ def main():
                 current_status = message
                 send_message(bot, current_status)
             else:
-                logger.INFO('статус не изменился')
+                logger.info('статус не изменился')
         except NotSentException as exc:
             raise NotSentException('какая-то ошибка') from exc
         except Exception as error:
@@ -143,5 +151,5 @@ def main():
 if __name__ == '__main__':
     try:
         main()
-    except Exception as exc:
-        raise Exception from exc
+    except KeyboardInterrupt as exc:
+        raise KeyboardInterrupt('пользователь прервал работу') from exc
