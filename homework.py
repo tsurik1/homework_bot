@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 from requests.exceptions import RequestException
 from telegram import TelegramError
 
-from example_for_log import set_loggin
 from exceptions import (
     CustomJSONDecodeError,
     CustomRequestException,
