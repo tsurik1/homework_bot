@@ -6,10 +6,12 @@ from json import JSONDecodeError
 
 import requests
 import telegram
+
 from dotenv import load_dotenv
 from requests.exceptions import RequestException
 from telegram import TelegramError
 
+from example_for_log import set_loggin
 from exceptions import (
     CustomJSONDecodeError,
     CustomRequestException,
@@ -40,7 +42,7 @@ HOMEWORK_VERDICT = {
 }
 
 
-def send_message(bot: "telegram.bot.Bot", message: str) -> None:
+def send_message(bot: telegram.bot, message: str) -> None:
     """Отправляем сообщение в телеграм."""
     logger.info(message)
     try:
@@ -104,6 +106,8 @@ def parse_status(homework: dict) -> str:
     if 'homework_name' not in homework:
         raise KeyError
     homework_name = homework['homework_name']
+    if 'status' not in homework:
+        raise KeyError
     homework_status = homework['status']
     logger.info("Возвращаем вердикт из словаря статусов.")
     verdict = HOMEWORK_VERDICT[homework_status]
@@ -134,10 +138,12 @@ def main():
                 current_status = message
                 send_message(bot, current_status)
             else:
+                message = 'статус не изменился'
                 logger.info('статус не изменился')
         except NotSentException as exc:
             raise NotSentException('какая-то ошибка') from exc
         except Exception as error:
+            message = f'Сбой в работе программы: {error}'
             logger.error(f'Сбой в работе программы: {error}')
             try:
                 send_message(bot, message)
@@ -148,6 +154,7 @@ def main():
 
 
 if __name__ == '__main__':
+    set_loggin()
     try:
         main()
     except KeyboardInterrupt as exc:
