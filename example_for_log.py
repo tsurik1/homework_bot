@@ -1,5 +1,6 @@
 import logging
 import os
+from stat import filemode
 import sys
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -13,7 +14,6 @@ def set_loggin():
             '%(asctime)s::[%(levelname)s]::%(message)s, '
             '%(name)s, %(lineno)s, %(filename)s'
         ),
-        filename=MAIN_DIR,
-        handlers=[logging.StreamHandler(sys.stdout)],
-        filemode='w'
+        handlers=[logging.StreamHandler(sys.stdout),
+                  logging.FileHandler(MAIN_DIR)],
     )
