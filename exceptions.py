@@ -26,5 +26,9 @@ class HomeworkIsNotList(Exception):
     """Список домашних работ не является списком."""
 
 
-class ListIsNotEmpty(Exception):
-    """Список домашних работ пуст."""
+class CustomNoSuchStatus(Exception):
+    """Не найден статус проверки дз."""
+
+
+class UserAborted(Exception):
+    """Пользователь прервал работу."""

@@ -1,3 +1,4 @@
+from email.errors import MessageError
 import logging
 import os
 import time
@@ -17,10 +18,11 @@ from exceptions import (
     CustomRequestException,
     CustomTelegramError,
     HomeworkIsNotList,
-    ListIsNotEmpty,
     NotSentException,
     TheServerDidNotSendTheTimeCutoff,
-    WrongAPIResponseCodeError
+    WrongAPIResponseCodeError,
+    CustomNoSuchStatus,
+    UserAborted
 )
 
 load_dotenv()
@@ -42,7 +44,7 @@ HOMEWORK_VERDICT = {
 }
 
 
-def send_message(bot: telegram.bot, message: str) -> None:
+def send_message(bot: telegram.Bot, message: str) -> None:
     """Отправляем сообщение в телеграм."""
     logger.info(message)
     try:
@@ -62,7 +64,7 @@ def get_api_answer(current_timestamp: int) -> dict:
             'неверный запрос к серверу'
         ) from exc
     if response.status_code != HTTPStatus.OK:
-        raise WrongAPIResponseCodeError(
+        raise CustomJSONDecodeError(
             'Ответ сервера не является успешным:'
             f' request params={params};'
             f' http_code={response.status_code};'
@@ -91,7 +93,7 @@ def check_response(response: dict) -> dict:
             'список домашних работ не является списком'
         )
     if not list_homework:
-        raise ListIsNotEmpty(
+        raise WrongAPIResponseCodeError(
             'список домашних работ пуст'
         )
     if 'current_date' not in response:
@@ -103,13 +105,17 @@ def check_response(response: dict) -> dict:
 
 def parse_status(homework: dict) -> str:
     """Возвращаем вердикт из словаря статусов."""
+    logger.info('Возвращаем вердикт из словаря статусов.')
     if 'homework_name' not in homework:
-        raise KeyError
+        raise KeyError(f'в словаре {homework} нет ключа "homework_name"')
     homework_name = homework['homework_name']
     if 'status' not in homework:
-        raise KeyError
+        raise KeyError(f'в словаре {homework} нет ключа "status"')
     homework_status = homework['status']
-    logger.info("Возвращаем вердикт из словаря статусов.")
+    if homework_status not in HOMEWORK_VERDICT:
+        raise CustomNoSuchStatus(
+            f'в словаре {HOMEWORK_VERDICT} не найден статус {homework_status}'
+        )
     verdict = HOMEWORK_VERDICT[homework_status]
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
@@ -126,7 +132,7 @@ def main():
     current_timestamp = 0
     current_status = str()
     if not check_tokens():
-        logger.critical('отановка программы, отсутствуют токены')
+        logger.critical('остановка программы, отсутствуют токены')
         exit()
     while True:
         try:
@@ -135,19 +141,19 @@ def main():
             message = parse_status(homework)
             current_timestamp = response['current_date']
             if message != current_status:
+                send_message(bot, message)
                 current_status = message
-                send_message(bot, current_status)
             else:
                 message = 'статус не изменился'
-                logger.info('статус не изменился')
+                logger.debug(message)
         except NotSentException as exc:
-            raise NotSentException('какая-то ошибка') from exc
+            raise CustomTelegramError('ошибка телеграма') from exc
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logger.error(f'Сбой в работе программы: {error}')
             try:
                 send_message(bot, message)
-            except TelegramError as error:
+            except MessageError as error:
                 logger.error(f'ошибка отправки сообщения{error}')
         finally:
             time.sleep(RETRY_TIME)
@@ -158,4 +164,4 @@ if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt as exc:
-        raise KeyboardInterrupt('пользователь прервал работу') from exc
+        raise UserAborted('пользователь прервал работу') from exc
