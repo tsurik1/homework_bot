@@ -129,6 +129,7 @@ def main():
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = 0
     current_status = str()
+    message = str()
     if not check_tokens():
         logger.critical('остановка программы, отсутствуют токены')
         exit()
@@ -154,8 +155,8 @@ def main():
                     send_message(bot, message)
                 except CustomTelegramError:
                     logger.error('ошибка отправки сообщения')
-            current_status = message
         finally:
+            current_status = message
             time.sleep(RETRY_TIME)
 
 
