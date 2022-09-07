@@ -6,8 +6,8 @@ class CustomTelegramError(NotSentException):
     """Исключения сгенерированные библиотекой telegram."""
 
 
-class WrongAPIResponseCodeError(NotSentException):
-    """Ответ сервера не является успешным."""
+class HomeworkListIsEmpty(NotSentException):
+    """Список домашних работ пуст."""
 
 
 class TheServerDidNotSendTheTimeCutoff(NotSentException):
@@ -28,7 +28,3 @@ class HomeworkIsNotList(Exception):
 
 class CustomNoSuchStatus(Exception):
     """Не найден статус проверки дз."""
-
-
-class UserAborted(Exception):
-    """Пользователь прервал работу."""

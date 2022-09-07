@@ -1,4 +1,3 @@
-from email.errors import MessageError
 import logging
 import os
 import time
@@ -20,9 +19,8 @@ from exceptions import (
     HomeworkIsNotList,
     NotSentException,
     TheServerDidNotSendTheTimeCutoff,
-    WrongAPIResponseCodeError,
+    HomeworkListIsEmpty,
     CustomNoSuchStatus,
-    UserAborted
 )
 
 load_dotenv()
@@ -55,7 +53,7 @@ def send_message(bot: telegram.Bot, message: str) -> None:
 
 def get_api_answer(current_timestamp: int) -> dict:
     """Делает запрос к единственному эндпоинту API-сервиса."""
-    logger.info("Делаем запрос к единственному эндпоинту API-сервиса.")
+    logger.info('Делаем запрос к единственному эндпоинту API-сервиса.')
     params = {'from_date': current_timestamp}
     try:
         response = requests.get(ENDPOINT, headers=HEADERS, params=params)
@@ -64,7 +62,7 @@ def get_api_answer(current_timestamp: int) -> dict:
             'неверный запрос к серверу'
         ) from exc
     if response.status_code != HTTPStatus.OK:
-        raise CustomJSONDecodeError(
+        raise CustomRequestException(
             'Ответ сервера не является успешным:'
             f' request params={params};'
             f' http_code={response.status_code};'
@@ -78,14 +76,14 @@ def get_api_answer(current_timestamp: int) -> dict:
 
 def check_response(response: dict) -> dict:
     """Проверяем ответ API на корректность."""
-    logger.info("Проверяем ответ ответ API на корректность.")
+    logger.info('Проверяем ответ ответ API на корректность.')
     if not isinstance(response, dict):
         raise TypeError(
             f'{response}ответ API не является словарем'
         )
     if 'homeworks' not in response:
         raise KeyError(
-            'ключа homeworks нет в ответе'
+            f'ключа homeworks нет в ответе {response}'
         )
     list_homework: list = response['homeworks']
     if not isinstance(list_homework, list):
@@ -93,7 +91,7 @@ def check_response(response: dict) -> dict:
             'список домашних работ не является списком'
         )
     if not list_homework:
-        raise WrongAPIResponseCodeError(
+        raise HomeworkListIsEmpty(
             'список домашних работ пуст'
         )
     if 'current_date' not in response:
@@ -122,7 +120,7 @@ def parse_status(homework: dict) -> str:
 
 def check_tokens() -> bool:
     """Проверка наличия токенов."""
-    logger.info("Проверка наличия токенов.")
+    logger.info('Проверка наличия токенов.')
     return all((PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID))
 
 
@@ -147,14 +145,16 @@ def main():
                 message = 'статус не изменился'
                 logger.debug(message)
         except NotSentException as exc:
-            raise CustomTelegramError('ошибка телеграма') from exc
+            logger.error(f'возникло исключение: {exc}')
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-            logger.error(f'Сбой в работе программы: {error}')
-            try:
-                send_message(bot, message)
-            except MessageError as error:
-                logger.error(f'ошибка отправки сообщения{error}')
+            logger.error(message)
+            if message != current_status:
+                try:
+                    send_message(bot, message)
+                except CustomTelegramError:
+                    logger.error('ошибка отправки сообщения')
+            current_status = message
         finally:
             time.sleep(RETRY_TIME)
 
@@ -164,4 +164,4 @@ if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt as exc:
-        raise UserAborted('пользователь прервал работу') from exc
+        logger.error(f'пользователь прервал работу')
