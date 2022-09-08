@@ -44,12 +44,13 @@ HOMEWORK_VERDICT = {
 
 def send_message(bot: telegram.Bot, message: str) -> None:
     """Отправляем сообщение в телеграм."""
-    logger.info(message)
+    logger.info('отправка сообщения в телеграм')
     try:
         bot.send_message(TELEGRAM_CHAT_ID, text=message)
     except TelegramError as error:
         raise CustomTelegramError('ошибка отправки сообщения') from error
-
+    logger.info('сообщение успешно отправлено')
+    
 
 def get_api_answer(current_timestamp: int) -> dict:
     """Делает запрос к единственному эндпоинту API-сервиса."""
@@ -152,8 +153,8 @@ def main():
             if message != current_status:
                 try:
                     send_message(bot, message)
-                except CustomTelegramError:
-                    message = 'статус не изменился'
+                except CustomTelegramError as error:
+                    message = f'сообщение не отправлено ошибка: {error}'
                     logger.error(message)
         finally:
             current_status = message
