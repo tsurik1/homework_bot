@@ -141,7 +141,6 @@ def main():
             current_timestamp = response['current_date']
             if message != current_status:
                 send_message(bot, message)
-                current_status = message
             else:
                 message = 'статус не изменился'
                 logger.debug(message)
@@ -154,7 +153,8 @@ def main():
                 try:
                     send_message(bot, message)
                 except CustomTelegramError:
-                    logger.error('ошибка отправки сообщения')
+                    message = 'статус не изменился'
+                    logger.error(message)
         finally:
             current_status = message
             time.sleep(RETRY_TIME)
@@ -164,5 +164,5 @@ if __name__ == '__main__':
     set_loggin()
     try:
         main()
-    except KeyboardInterrupt as exc:
-        logger.error(f'пользователь прервал работу')
+    except KeyboardInterrupt:
+        logger.error('пользователь прервал работу')
