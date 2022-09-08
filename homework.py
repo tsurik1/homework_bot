@@ -50,7 +50,7 @@ def send_message(bot: telegram.Bot, message: str) -> None:
     except TelegramError as error:
         raise CustomTelegramError('ошибка отправки сообщения') from error
     logger.info('сообщение успешно отправлено')
-    
+
 
 def get_api_answer(current_timestamp: int) -> dict:
     """Делает запрос к единственному эндпоинту API-сервиса."""
